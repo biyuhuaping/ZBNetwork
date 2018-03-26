@@ -11,6 +11,4 @@
 
 #import "ZBNetwork.h"
 
-static AFNetworkReachabilityStatus networkReachabilityStatus;
-
 #endif /* PrefixHeader_pch */

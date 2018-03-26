@@ -32,7 +32,7 @@
  get请求
  */
 + (void)GET:(NSString *_Nullable)URLString parameters:(NSDictionary *_Nullable)parameters success:(void (^_Nonnull)(id _Nullable  response))success failure:(void (^_Nonnull)(NSError * _Nullable error))failure{
-    if (networkReachabilityStatus == AFNetworkReachabilityStatusNotReachable) {
+    if (![AFNetworkReachabilityManager sharedManager].isReachable) {
 //        ShowMessage(dataInfoMessage);
         return;
     }
@@ -56,7 +56,7 @@
  post请求
  */
 + (void)POST:(NSString *_Nullable)URLString parameters:(NSDictionary *_Nullable)parameters success:(void (^_Nonnull)(id _Nullable  response))success failure:(void (^_Nonnull)(NSError * _Nullable error))failure{
-    if (networkReachabilityStatus == AFNetworkReachabilityStatusNotReachable) {
+    if (![AFNetworkReachabilityManager sharedManager].isReachable) {
 //        ShowMessage(dataInfoMessage);
         return;
     }

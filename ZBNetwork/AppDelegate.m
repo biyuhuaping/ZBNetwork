@@ -28,7 +28,6 @@
     [manager startMonitoring];
     [manager setReachabilityStatusChangeBlock:^(AFNetworkReachabilityStatus status) {
         NSLog(@"网络状态 : %@", @(status));
-        networkReachabilityStatus = status;
     }];
 }
 
