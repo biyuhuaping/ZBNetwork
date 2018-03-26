@@ -1,0 +1,16 @@
+//
+//  PrefixHeader.pch
+//  ZBNetwork
+//
+//  Created by 周博 on 2018/3/26.
+//  Copyright © 2018年 周博. All rights reserved.
+//
+
+#ifndef PrefixHeader_pch
+#define PrefixHeader_pch
+
+#import "ZBNetwork.h"
+
+static AFNetworkReachabilityStatus networkReachabilityStatus;
+
+#endif /* PrefixHeader_pch */
