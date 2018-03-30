@@ -12,19 +12,33 @@
 @property (nonatomic, strong) AFHTTPSessionManager *sessionManager;
 @end
 
+static ZBNetwork *manager = nil;
+
 @implementation ZBNetwork
 
-+ (instancetype)defaultManager {
-    static ZBNetwork *manager = nil;
++ (void)initialize{
+    [self shareManager];
+}
+
++ (instancetype)shareManager {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         manager = [[self alloc] init];
-        manager.sessionManager = [AFHTTPSessionManager manager];
-        manager.sessionManager.requestSerializer.timeoutInterval = 20.0;// 设置超时时间
-        manager.sessionManager.requestSerializer.stringEncoding = NSUTF8StringEncoding;
-        manager.sessionManager.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:@"application/json",@"text/plain",nil];
     });
     return manager;
+}
+
+- (instancetype)init {
+    if (self = [super init]) {
+        self.sessionManager = [AFHTTPSessionManager manager];
+        // 设置请求以及相应的序列化器
+        self.sessionManager = [AFHTTPSessionManager manager];
+        self.sessionManager.requestSerializer.timeoutInterval = 20.0;// 设置超时时间
+        self.sessionManager.requestSerializer.stringEncoding = NSUTF8StringEncoding;
+//        self.sessionManager.responseSerializer.acceptableContentTypes = [NSSet setWithArray:@[@"application/json", @"text/html", @"text/json", @"text/plain", @"text/javascript", @"text/xml", @"image/*", @"application/octet-stream", @"application/zip"]];
+        self.sessionManager.responseSerializer.acceptableContentTypes = [NSSet setWithObjects:@"application/json",@"text/plain",nil];
+    }
+    return self;
 }
 
 #pragma mark - GET, POST 网络请求
@@ -33,18 +47,17 @@
  */
 + (void)GET:(NSString *_Nullable)URLString parameters:(NSDictionary *_Nullable)parameters success:(void (^_Nonnull)(id _Nullable  response))success failure:(void (^_Nonnull)(NSError * _Nullable error))failure{
     if (![AFNetworkReachabilityManager sharedManager].isReachable) {
-//        ShowMessage(dataInfoMessage);
+        NSLog(@"网络不通，取消请求");
         return;
     }
-    [self sendRequestMethod:HTTPMethodGET requestPath:URLString parameters:parameters progress:nil success:^(BOOL isSuccess, id  _Nullable responseObject) {
-        BOOL isValid = [[self defaultManager] networkResponseData:responseObject];
+    [manager sendRequestMethod:HTTPMethodGET requestPath:URLString parameters:parameters progress:nil success:^(BOOL isSuccess, id  _Nullable responseObject) {
+        BOOL isValid = [manager networkResponseData:responseObject];
 //            BOOL result = [responseObject[@"result"] boolValue];
         BOOL status = [responseObject[@"status"] intValue];
         if (success && isValid && !status) {
             success(responseObject);
         }else{
             NSString *message = responseObject[@"message"];
-            //                ShowMessage(message);
             failure([message copy]);
         }
     } failure:^(NSString * _Nullable errorMessage) {
@@ -57,16 +70,15 @@
  */
 + (void)POST:(NSString *_Nullable)URLString parameters:(NSDictionary *_Nullable)parameters success:(void (^_Nonnull)(id _Nullable  response))success failure:(void (^_Nonnull)(NSError * _Nullable error))failure{
     if (![AFNetworkReachabilityManager sharedManager].isReachable) {
-//        ShowMessage(dataInfoMessage);
+        NSLog(@"网络不通，取消请求");
         return;
     }
-    [self sendRequestMethod:HTTPMethodPOST requestPath:URLString parameters:parameters progress:nil success:^(BOOL isSuccess, id  _Nullable responseObject) {
-        BOOL isValid = [[self defaultManager] networkResponseData:responseObject];
+    [manager sendRequestMethod:HTTPMethodPOST requestPath:URLString parameters:parameters progress:nil success:^(BOOL isSuccess, id  _Nullable responseObject) {
+        BOOL isValid = [manager networkResponseData:responseObject];
         if (success && isValid) {
             success(responseObject);
         }else{
             NSString *message = responseObject[@"msg"];
-//                ShowMessage(responseObject[@"msg"]);
             failure([message copy]);
         }
     } failure:^(NSString * _Nullable errorMessage) {
@@ -74,89 +86,29 @@
     }];
 }
 
-#pragma mark - 
-#pragma mark - 常用网络请求(GET, POST, PUT, PATCH, DELETE)
 /**
- 常用网络请求方式
+ 上传文件
  
- @param requestMethod 请求方试
- @param requestPath 请求地址
- @param parameters 参数
- @param progress 进度
+ @param url 服务器地址
+ @param data data类型的文件
+ @param name 名称
+ @param fileName 文件名
+ @param mimeType 文件类型
+ @param progress 上传进度
  @param success 成功
  @param failure 失败
- @return return value description
+ @return 返回
  */
-+ (nullable NSURLSessionDataTask *)sendRequestMethod:(HTTPMethod)requestMethod requestPath:(nonnull NSString *)requestPath parameters:(nullable id)parameters progress:(nullable void (^)(NSProgress * _Nullable progress))progress success:(nullable void(^) (BOOL isSuccess, id _Nullable responseObject))success failure:(nullable void(^) (NSString * _Nullable errorMessage))failure {
-    NSLog(@"\n==============================请求的地址:==============================\n%@\n=====================================================================\n",requestPath);
-    NSURLSessionDataTask * task = nil;
-    switch (requestMethod) {
-        case HTTPMethodGET: {
-            task = [[[self defaultManager] sessionManager] GET:requestPath parameters:parameters progress:progress success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
-                if (success) {
-                    success(YES,responseObject);
-                }
-            } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
-                if (failure) {
-                    failure([[self defaultManager] failHandleWithErrorResponse:error task:task]);
-                }
-            }];
-        }
-            break;
-            
-        case HTTPMethodPOST: {
-            task = [[[self defaultManager] sessionManager] POST:requestPath parameters:parameters progress:progress success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
-                if (success) {
-                    success(YES,responseObject);
-                }
-            } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
-                if (failure) {
-                    failure([[self defaultManager] failHandleWithErrorResponse:error task:task]);
-                }
-            }];
-        }
-            break;
-            
-        case HTTPMethodPUT: {
-            task = [[[self defaultManager] sessionManager] PUT:requestPath parameters:parameters success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
-                if (success) {
-                    success(YES,responseObject);
-                }
-            } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
-                if (failure) {
-                    failure([[self defaultManager] failHandleWithErrorResponse:error task:task]);
-                }
-            }];
-        }
-            break;
-            
-        case HTTPMethodPATCH: {
-            task = [[[self defaultManager] sessionManager] PATCH:requestPath parameters:parameters success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
-                if (success) {
-                    success(YES,responseObject);
-                }
-            } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
-                if (failure) {
-                    failure([[self defaultManager] failHandleWithErrorResponse:error task:task]);
-                }
-            }];
-        }
-            break;
-            
-        case HTTPMethodDELETE: {
-            task = [[[self defaultManager] sessionManager] DELETE:requestPath parameters:parameters success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
-                if (success) {
-                    success(YES,responseObject);
-                }
-            } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
-                if (failure) {
-                    failure([[self defaultManager] failHandleWithErrorResponse:error task:task]);
-                }
-            }];
-        }
-            break;
-    }
-    return task;
++ (nullable NSURLSessionDataTask *)POSTFileWithUrl:(NSString *_Nullable)url fileData:(NSData *_Nullable)data name:(NSString *_Nonnull)name fileName:(NSString *_Nonnull)fileName mimeType:(NSString *_Nonnull)mimeType progress:(nullable void (^)(NSProgress * _Nullable progress))progress success:(nullable void(^) (BOOL isSuccess, id _Nullable responseObject))success failure:(nullable void(^) (NSString *_Nullable error))failure{
+    NSURLSessionDataTask * session = nil;
+    session = [manager.sessionManager POST:url parameters:nil constructingBodyWithBlock:^(id<AFMultipartFormData>  _Nonnull formData) {
+        [formData appendPartWithFileData:data name:name fileName:fileName mimeType:mimeType];
+    } progress:progress success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+        if (success)success(YES,responseObject);
+    } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+        if (failure) failure([manager failHandleWithErrorResponse:error task:task]);
+    }];
+    return session;
 }
 
 /**
@@ -171,14 +123,14 @@
  @param failure 失败
  @return return value description
  */
-+ (nullable NSURLSessionDataTask *)sendPOSTRequestWithPath:(nonnull NSString *)requestPath parameters:(nullable id)parameters imageArray:(NSArray *_Nullable)imageArray targetWidth:(CGFloat )width progress:(nullable void (^)(NSProgress * _Nullable progress))progress success:(nullable void(^) (BOOL isSuccess, id _Nullable responseObject))success failure:(nullable void(^) (NSString *_Nullable error))failure {
++ (nullable NSURLSessionDataTask *)POSTRequestWithPath:(nonnull NSString *)requestPath parameters:(nullable id)parameters imageArray:(NSArray *_Nullable)imageArray targetWidth:(CGFloat )width progress:(nullable void (^)(NSProgress * _Nullable progress))progress success:(nullable void(^) (BOOL isSuccess, id _Nullable responseObject))success failure:(nullable void(^) (NSString *_Nullable error))failure {
     NSURLSessionDataTask * task = nil;
-    task = [[[self defaultManager] sessionManager] POST:requestPath parameters:parameters constructingBodyWithBlock:^(id<AFMultipartFormData>  _Nonnull formData) {
+    task = [manager.sessionManager POST:requestPath parameters:parameters constructingBodyWithBlock:^(id<AFMultipartFormData>  _Nonnull formData) {
         NSUInteger i = 0 ;
         // 上传图片时，为了用户体验或是考虑到性能需要进行压缩
         for (UIImage * image in imageArray) {
             // 压缩图片，指定宽度（注释：imageCompressed：withdefineWidth：图片压缩的category）
-//            UIImage *  resizedImage =  [UIImage imageCompressed:image withdefineWidth:width];
+            //            UIImage *  resizedImage =  [UIImage imageCompressed:image withdefineWidth:width];
             NSData * imgData = UIImageJPEGRepresentation(image, 0.5);
             // 拼接Data
             [formData appendPartWithFileData:imgData name:[NSString stringWithFormat:@"picflie%ld",(long)i] fileName:@"image.png" mimeType:@" image/jpeg"];
@@ -187,35 +139,94 @@
     } progress:progress success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
         if (success)success(YES,responseObject);
     } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
-        if (failure) failure([[self defaultManager] failHandleWithErrorResponse:error task:task]);
+        if (failure) failure([manager failHandleWithErrorResponse:error task:task]);
     }];
     return task;
 }
 
-
+#pragma mark -
+#pragma mark - 常用网络请求(GET, POST, PUT, PATCH, DELETE)
 /**
- 上传文件
+ 常用网络请求方式
 
- @param url 服务器地址
- @param data data类型的文件
- @param name 名称
- @param fileName 文件名
- @param mimeType 文件类型
- @param progress 上传进度
+ @param requestMethod 请求方试
+ @param requestPath 请求地址
+ @param parameters 参数
+ @param progress 进度
  @param success 成功
  @param failure 失败
- @return 返回
+ @return return value description
  */
-+ (nullable NSURLSessionDataTask *)POSTFileWithUrl:(NSString *_Nullable)url fileData:(NSData *_Nullable)data name:(NSString *_Nonnull)name fileName:(NSString *_Nonnull)fileName mimeType:(NSString *_Nonnull)mimeType progress:(nullable void (^)(NSProgress * _Nullable progress))progress success:(nullable void(^) (BOOL isSuccess, id _Nullable responseObject))success failure:(nullable void(^) (NSString *_Nullable error))failure{
-    NSURLSessionDataTask * session = nil;
-    session = [[[self defaultManager] sessionManager] POST:url parameters:nil constructingBodyWithBlock:^(id<AFMultipartFormData>  _Nonnull formData) {
-        [formData appendPartWithFileData:data name:name fileName:fileName mimeType:mimeType];
-    } progress:progress success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
-        if (success)success(YES,responseObject);
-    } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
-        if (failure) failure([[self defaultManager] failHandleWithErrorResponse:error task:task]);
-    }];
-    return session;
+- (nullable NSURLSessionDataTask *)sendRequestMethod:(HTTPMethod)requestMethod requestPath:(nonnull NSString *)requestPath parameters:(nullable id)parameters progress:(nullable void (^)(NSProgress * _Nullable progress))progress success:(nullable void(^) (BOOL isSuccess, id _Nullable responseObject))success failure:(nullable void(^) (NSString * _Nullable errorMessage))failure {
+    NSLog(@"\n==============================请求的地址:==============================\n%@\n=====================================================================\n",requestPath);
+    NSURLSessionDataTask * task = nil;
+    switch (requestMethod) {
+        case HTTPMethodGET: {
+            task = [self.sessionManager GET:requestPath parameters:parameters progress:progress success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+                if (success) {
+                    success(YES,responseObject);
+                }
+            } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+                if (failure) {
+                    failure([self failHandleWithErrorResponse:error task:task]);
+                }
+            }];
+        }
+            break;
+            
+        case HTTPMethodPOST: {
+            task = [self.sessionManager POST:requestPath parameters:parameters progress:progress success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+                if (success) {
+                    success(YES,responseObject);
+                }
+            } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+                if (failure) {
+                    failure([self failHandleWithErrorResponse:error task:task]);
+                }
+            }];
+        }
+            break;
+            
+        case HTTPMethodPUT: {
+            task = [self.sessionManager PUT:requestPath parameters:parameters success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+                if (success) {
+                    success(YES,responseObject);
+                }
+            } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+                if (failure) {
+                    failure([self failHandleWithErrorResponse:error task:task]);
+                }
+            }];
+        }
+            break;
+            
+        case HTTPMethodPATCH: {
+            task = [self.sessionManager PATCH:requestPath parameters:parameters success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+                if (success) {
+                    success(YES,responseObject);
+                }
+            } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+                if (failure) {
+                    failure([self failHandleWithErrorResponse:error task:task]);
+                }
+            }];
+        }
+            break;
+            
+        case HTTPMethodDELETE: {
+            task = [self.sessionManager DELETE:requestPath parameters:parameters success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+                if (success) {
+                    success(YES,responseObject);
+                }
+            } failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+                if (failure) {
+                    failure([self failHandleWithErrorResponse:error task:task]);
+                }
+            }];
+        }
+            break;
+    }
+    return task;
 }
 
 #pragma mark - 网络回调统一处理

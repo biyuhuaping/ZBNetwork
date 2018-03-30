@@ -26,7 +26,6 @@ typedef NS_ENUM(NSUInteger, HTTPMethod) {
 
 @interface ZBNetwork : NSObject
 
-#pragma mark - 常用网络请求
 /**
  get请求
   */
@@ -36,37 +35,6 @@ typedef NS_ENUM(NSUInteger, HTTPMethod) {
  post请求
   */
 + (void)POST:(NSString *_Nullable)URLString parameters:(NSDictionary *_Nullable)parameters success:(void (^_Nonnull)(id _Nullable  response))success failure:(void (^_Nonnull)(NSError * _Nullable error))failure;
-
-
-#pragma mark -
-#pragma mark - 常用网络请求(GET, POST, PUT, PATCH, DELETE)
-
-/**
- 常用网络请求方式
- 
- @param requestMethod 请求方试
- @param requestPath 请求地址
- @param parameters 参数
- @param progress 进度
- @param success 成功
- @param failure 失败
- @return return value description
- */
-+ (nullable NSURLSessionDataTask *)sendRequestMethod:(HTTPMethod)requestMethod requestPath:(nonnull NSString *)requestPath parameters:(nullable id)parameters progress:(nullable void (^)(NSProgress * _Nullable progress))progress success:(nullable void(^) (BOOL isSuccess, id _Nullable responseObject))success failure:(nullable void(^) (NSString * _Nullable errorMessage))failure;
-
-/**
- 上传图片
- 
- @param requestPath 服务器地址
- @param parameters 参数
- @param imageArray 图片
- @param width 图片宽度
- @param progress 进度
- @param success 成功
- @param failure 失败
- @return return value description
- */
-+ (nullable NSURLSessionDataTask *)sendPOSTRequestWithPath:(nonnull NSString *)requestPath parameters:(nullable id)parameters imageArray:(NSArray *_Nullable)imageArray targetWidth:(CGFloat )width progress:(nullable void (^)(NSProgress * _Nullable progress))progress success:(nullable void(^) (BOOL isSuccess, id _Nullable responseObject))success failure:(nullable void(^) (NSString *_Nullable error))failure;
 
 /**
  上传文件
@@ -82,5 +50,19 @@ typedef NS_ENUM(NSUInteger, HTTPMethod) {
  @return 返回
  */
 + (nullable NSURLSessionDataTask *)POSTFileWithUrl:(NSString *_Nullable)url fileData:(NSData *_Nullable)data name:(NSString *_Nonnull)name fileName:(NSString *_Nonnull)fileName mimeType:(NSString *_Nonnull)mimeType progress:(nullable void (^)(NSProgress * _Nullable progress))progress success:(nullable void(^) (BOOL isSuccess, id _Nullable responseObject))success failure:(nullable void(^) (NSString *_Nullable error))failure;
+
+/**
+ 上传图片
+ 
+ @param requestPath 服务器地址
+ @param parameters 参数
+ @param imageArray 图片
+ @param width 图片宽度
+ @param progress 进度
+ @param success 成功
+ @param failure 失败
+ @return return value description
+ */
++ (nullable NSURLSessionDataTask *)POSTRequestWithPath:(nonnull NSString *)requestPath parameters:(nullable id)parameters imageArray:(NSArray *_Nullable)imageArray targetWidth:(CGFloat )width progress:(nullable void (^)(NSProgress * _Nullable progress))progress success:(nullable void(^) (BOOL isSuccess, id _Nullable responseObject))success failure:(nullable void(^) (NSString *_Nullable error))failure;
 
 @end
