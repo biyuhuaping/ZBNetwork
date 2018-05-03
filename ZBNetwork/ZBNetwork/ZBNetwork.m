@@ -48,6 +48,7 @@ static ZBNetwork *manager = nil;
 + (void)GET:(NSString *_Nullable)URLString parameters:(NSDictionary *_Nullable)parameters success:(void (^_Nonnull)(id _Nullable  response))success failure:(void (^_Nonnull)(NSError * _Nullable error))failure{
     if (![AFNetworkReachabilityManager sharedManager].isReachable) {
         NSLog(@"网络不通，取消请求");
+        failure(nil);
         return;
     }
     [manager sendRequestMethod:HTTPMethodGET requestPath:URLString parameters:parameters progress:nil success:^(BOOL isSuccess, id  _Nullable responseObject) {
@@ -71,6 +72,7 @@ static ZBNetwork *manager = nil;
 + (void)POST:(NSString *_Nullable)URLString parameters:(NSDictionary *_Nullable)parameters success:(void (^_Nonnull)(id _Nullable  response))success failure:(void (^_Nonnull)(NSError * _Nullable error))failure{
     if (![AFNetworkReachabilityManager sharedManager].isReachable) {
         NSLog(@"网络不通，取消请求");
+        failure(nil);
         return;
     }
     [manager sendRequestMethod:HTTPMethodPOST requestPath:URLString parameters:parameters progress:nil success:^(BOOL isSuccess, id  _Nullable responseObject) {
