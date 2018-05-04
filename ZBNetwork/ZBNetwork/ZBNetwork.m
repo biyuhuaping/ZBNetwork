@@ -46,7 +46,8 @@ static ZBNetwork *manager = nil;
  get请求
  */
 + (void)GET:(NSString *_Nullable)URLString parameters:(NSDictionary *_Nullable)parameters success:(void (^_Nonnull)(id _Nullable  response))success failure:(void (^_Nonnull)(NSError * _Nullable error))failure{
-    if (![AFNetworkReachabilityManager sharedManager].isReachable) {
+    //由于每次启动时，网络状态未知，所只认为状态为0的时候，网络不可达。
+    if ([AFNetworkReachabilityManager sharedManager].networkReachabilityStatus == 0) {
         NSLog(@"网络不通，取消请求");
         failure(nil);
         return;
@@ -70,7 +71,8 @@ static ZBNetwork *manager = nil;
  post请求
  */
 + (void)POST:(NSString *_Nullable)URLString parameters:(NSDictionary *_Nullable)parameters success:(void (^_Nonnull)(id _Nullable  response))success failure:(void (^_Nonnull)(NSError * _Nullable error))failure{
-    if (![AFNetworkReachabilityManager sharedManager].isReachable) {
+    //由于每次启动时，网络状态未知，所只认为状态为0的时候，网络不可达。
+    if ([AFNetworkReachabilityManager sharedManager].networkReachabilityStatus == 0) {
         NSLog(@"网络不通，取消请求");
         failure(nil);
         return;
